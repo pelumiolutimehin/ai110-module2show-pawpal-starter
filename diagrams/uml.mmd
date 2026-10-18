@@ -1,15 +1,69 @@
 classDiagram
-    %% Replace the placeholders below with your actual classes, attributes, methods, and relationships.
-    %% Keep this file updated so it matches your final implementation.
+    %% Draft v1 - keep updated so it matches the final implementation.
 
-    class ClassName {
-        +type attribute
-        +method() returnType
+    class Owner {
+        +str name
+        +int available_minutes
+        +dict preferences
+        +list~Pet~ pets
+        +add_pet(pet) None
+        +remove_pet(pet) None
     }
 
-    class AnotherClass {
-        +type attribute
-        +method() returnType
+    class Pet {
+        +str name
+        +str species
+        +str breed
+        +list~Task~ tasks_list
+        +add_task(task) None
+        +remove_task(task) None
+        +pending_tasks() list~Task~
     }
 
-    ClassName --> AnotherClass : relationship
+    class Task {
+        +str title
+        +int duration
+        +str priority
+        +str category
+        +str frequency
+        +time fixed_time
+        +bool completed
+        +mark_complete() Task
+        +is_due(day) bool
+    }
+
+    class Scheduler {
+        +Owner owner
+        +generate_plan(day) Plan
+        -sort_tasks(tasks) list~Task~
+        -fit_to_time(tasks, minutes) tuple
+        +find_conflicts(tasks) list
+    }
+
+    class Plan {
+        +list~ScheduledItem~ items
+        +list~SkippedTask~ skipped
+        +int total_minutes
+        +explain() str
+    }
+
+    class ScheduledItem {
+        +Task task
+        +time start_time
+        +time end_time
+        +str reason
+    }
+
+    class SkippedTask {
+        +Task task
+        +str reason
+    }
+
+    Owner "1" o-- "*" Pet : has
+    Pet "1" o-- "*" Task : has
+    Scheduler --> Owner : reads time and prefs
+    Scheduler ..> Plan : creates
+    Plan "1" *-- "*" ScheduledItem : contains
+    Plan "1" *-- "*" SkippedTask : contains
+    ScheduledItem --> Task
+    SkippedTask --> Task
