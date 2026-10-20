@@ -5,12 +5,23 @@
 **a. Initial design**
 
 - Briefly describe your initial UML design.
+  - The design supports three core user actions: add a pet, add care tasks (such as a walk) for that pet, and view a daily plan for the pet(s). The owner's available time and preferences are the constraints that shape the plan.
+  - Data flows in one direction: an `Owner` has `Pet`s, each `Pet` has `Task`s, and a `Scheduler` reads the owner's data and produces a `Plan`. The scheduling logic is kept separate from the data classes so it can be tested without the Streamlit UI.
 - What classes did you include, and what responsibilities did you assign to each?
+  - **Owner**: holds the owner's name, `available_minutes` for the day, `preferences`, and their list of pets. It is the entry point for the data and supplies the time constraint the scheduler uses.
+  - **Pet**: holds the pet's name, species, breed, and its `tasks_list`. It adds and removes tasks and can report which tasks are still pending.
+  - **Task**: represents one care activity, with a title, duration, priority, category, frequency, an optional `fixed_time`, and a completed flag. It knows whether it is due on a given day and can mark itself complete, creating the next occurrence if it recurs.
+  - **Scheduler**: the "brain" of the app. It holds the owner, sorts tasks by priority, fits them into the available time, detects conflicts between fixed-time tasks, and returns a `Plan`.
+  - **Plan**: the result of scheduling. It holds the scheduled items, the skipped tasks, and the total minutes, and can explain the plan in plain text.
+  - **ScheduledItem**: one task placed in the plan, with a start time, end time, and the reason it was placed there.
+  - **SkippedTask**: a task left out of the plan, with the reason (for example, not enough time).
+
 
 **b. Design changes**
 
-- Did your design change during implementation?
+- Did your design change during implementation? Yes ✅
 - If yes, describe at least one change and why you made it.
+  - Added a pet_name attribute to the Task class: Task.pet_name is set by Pet.add_task, so that plans can say which pet a task is for and users can filter by pet
 
 ---
 
