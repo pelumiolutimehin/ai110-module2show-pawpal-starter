@@ -44,14 +44,15 @@ pip install -r requirements.txt
 
 ## 🖥️ Sample Output
 
-Paste a sample of your app's CLI or Streamlit output here so a reader can see what a generated plan looks like:
+Output from running `python main.py`:
 
 ```
-# e.g.:
-# Daily plan for Biscuit (Golden Retriever):
-#   08:00 — Morning walk (30 min) [priority: high]
-#   09:00 — Feeding (10 min) [priority: high]
-#   ...
+(.venv) pelumiol@Oluwapelumis-MacBook-Pro-2 ai110-module2show-pawpal-starter % python main.py
+Today's Schedule for John (Tuesday, October 20, 2026)
+==================================================
+07:30 - 08:00  Morning walk (Bingo, high priority)
+12:15 - 12:30  Litter box cleaning (Valentine, medium priority)
+18:00 - 18:10  Evening feeding (Bingo, high priority)
 ```
 
 ## 🧪 Testing PawPal+
@@ -79,7 +80,7 @@ Sample test output:
 | Task sorting | | e.g., by priority, duration |
 | Filtering | | e.g., skip tasks if time runs out |
 | Conflict handling | | e.g., overlapping time slots |
-| Recurring tasks | | e.g., daily vs. weekly |
+| Recurring tasks | `Task.mark_complete`, `Pet.complete_task` | Daily/weekly tasks follow a fixed schedule: the next due date is the previous due date + 1 or 7 days, not the completion date. It is never set in the past, so a late completion doesn't create an overdue task. |
 
 ## 📸 Demo Walkthrough
 
