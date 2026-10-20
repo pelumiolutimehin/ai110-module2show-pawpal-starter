@@ -16,6 +16,7 @@ classDiagram
         +list~Pet~ pets
         +add_pet(pet) None
         +remove_pet(pet) None
+        +get_all_tasks() list~Task~
     }
 
     class Pet {
@@ -45,6 +46,7 @@ classDiagram
 
     class Scheduler {
         +Owner owner
+        +get_due_tasks(day) list~Task~
         +generate_plan(day) Plan
         -sort_tasks(tasks) list~Task~
         -fit_to_time(tasks, minutes) tuple
@@ -73,7 +75,7 @@ classDiagram
     Owner "1" o-- "*" Pet : has
     Pet "1" o-- "*" Task : has
     Task --> Priority
-    Scheduler --> Owner : reads time and prefs
+    Scheduler --> Owner : reads time, prefs and get_all_tasks()
     Scheduler ..> Plan : creates
     Plan "1" *-- "*" ScheduledItem : contains
     Plan "1" *-- "*" SkippedTask : contains
