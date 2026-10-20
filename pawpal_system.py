@@ -42,6 +42,8 @@ class Task:
         doesn't shift the cadence. It is never set in the past, so a task completed
         several days late doesn't come back already overdue.
         """
+        if self.completed:  # already done: don't spawn a duplicate occurrence
+            return None
         self.completed = True
         interval = _RECURRENCE_DAYS[self.frequency]
         if interval is None:
@@ -71,13 +73,14 @@ class Pet:
         """Remove a task (matched by identity); raises ValueError if it isn't this pet's."""
         self.tasks_list.remove(task)
 
-    def complete_task(self, task: Task) -> None:
-        """Mark a task complete and add its next occurrence, if any."""
+    def complete_task(self, task: Task) -> Task | None:
+        """Mark a task complete and add its next occurrence; return it (None if none)."""
         if task not in self.tasks_list:
             raise ValueError(f"{task.title!r} is not one of {self.name}'s tasks")
         next_task = task.mark_complete()
         if next_task is not None:
             self.add_task(next_task)
+        return next_task
 
     def pending_tasks(self) -> list[Task]:
         """Tasks that have not been completed yet."""
@@ -192,7 +195,37 @@ class Scheduler:
         """Sort by priority (descending); shorter tasks first within a priority."""
         return sorted(tasks, key=lambda t: (-t.priority, t.duration))
 
-    def _fit_to_time(self, tasks: list[Task], minutes: int) -> tuple[list[Task], list[Task]]:
+    def complete_task(self, task: Task) -> Task | None:
+        """Complete a task found on any of the owner's pets; return its next occurrence."""
+        for pet in self.owner.pets:
+            if any(t is task for t in pet.tasks_list):
+                return pet.complete_task(task)
+        raise ValueError(f"{task.title!r} is not one of {self.owner.name}'s tasks")
+
+    def sort_by_time(self, tasks: list[Task] | None = None) -> list[Task]:
+        """Tasks ordered by fixed time, earliest first (defaults to all of the owner's tasks).
+
+        Tasks without a fixed time go last; ties break by higher priority, then title.
+        """
+        if tasks is None:
+            tasks = self.owner.get_all_tasks()
+        return sorted(tasks, key=lambda t: (t.fixed_time is None, t.fixed_time or time.min,
+                                            -t.priority, t.title))
+
+    def filter_tasks(self, completed: bool | None = None, pet_name: str | None = None,
+                     tasks: list[Task] | None = None) -> list[Task]:
+        """Tasks matching every given filter (defaults to all of the owner's tasks).
+
+        `completed` keeps only done (True) or pending (False) tasks; `pet_name` keeps one
+        pet's tasks, matched case-insensitively. A filter left as None is not applied.
+        """
+        if tasks is None:
+            tasks = self.owner.get_all_tasks()
+        return [t for t in tasks
+                if (completed is None or t.completed == completed)
+                and (pet_name is None or t.pet_name.lower() == pet_name.lower())]
+
+    def _fit_to_time(self,tasks: list[Task], minutes: int) -> tuple[list[Task], list[Task]]:
         """Return (fits, doesn't fit); keep trying shorter tasks after one misses."""
         fits: list[Task] = []
         over: list[Task] = []
@@ -209,6 +242,28 @@ class Scheduler:
         timed = [t for t in tasks if t.fixed_time is not None]
         return [(a, b) for i, a in enumerate(timed) for b in timed[i + 1:]
                 if self._overlaps(a, b)]
+
+    def conflict_warnings(self, day: date | None = None) -> list[str]:
+        """Human-readable warnings for clashing tasks due on `day` (default today).
+
+        Never raises: an empty list means no clashes. Each warning says whether the
+        clash is within one pet's tasks or between two pets, since either way the
+        owner can't be in two places at once.
+        """
+        due = self.get_due_tasks(day or date.today())
+        warnings = []
+        for a, b in self.find_conflicts(self.sort_by_time(due)):
+            scope = (f"same pet ({a.pet_name})" if a.pet_name == b.pet_name
+                     else f"different pets ({a.pet_name} and {b.pet_name})")
+            warnings.append(f"Warning: '{a.title}' {self._window(a)} overlaps "
+                            f"'{b.title}' {self._window(b)} - {scope}")
+        return warnings
+
+    @staticmethod
+    def _window(task: Task) -> str:
+        """'HH:MM-HH:MM' for a fixed-time task."""
+        start = datetime.combine(date.today(), task.fixed_time)
+        return f"{start:%H:%M}-{start + timedelta(minutes=task.duration):%H:%M}"
 
     @staticmethod
     def _overlaps(a: Task, b: Task) -> bool:

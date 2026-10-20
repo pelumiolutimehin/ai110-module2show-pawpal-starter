@@ -35,7 +35,9 @@
 **b. Tradeoffs**
 
 - Describe one tradeoff your scheduler makes.
+  - When two fixed-time tasks overlap, `generate_plan` keeps the higher-priority one and skips the other, listing it in the plan with the reason. It does not try to move the skipped task to a free slot. Priority order is a simple greedy rule, with shorter tasks first within a priority.
 - Why is that tradeoff reasonable for this scenario?
+  - A pet owner's day has only a handful of tasks, so a rule they can predict and read matters more than an optimal plan. "The higher-priority task wins" is easy to explain and test, and every skipped task is listed with a reason. The cost is that a low-priority task, such as grooming, is dropped when it could have been moved 30 minutes later, so automatic rescheduling is the first thing I would add next.
 
 ---
 

@@ -91,14 +91,16 @@ Sample test output:
 
 ## 📐 Smarter Scheduling
 
-> Fill in once you've implemented scheduling logic.
+All methods are in `pawpal_system.py`, and `main.py` demonstrates each one.
 
 | Feature | Method(s) | Notes |
 |---------|-----------|-------|
-| Task sorting | | e.g., by priority, duration |
-| Filtering | | e.g., skip tasks if time runs out |
-| Conflict handling | | e.g., overlapping time slots |
-| Recurring tasks | `Task.mark_complete`, `Pet.complete_task` | Daily/weekly tasks follow a fixed schedule: the next due date is the previous due date + 1 or 7 days, not the completion date. It is never set in the past, so a late completion doesn't create an overdue task. |
+| Sorting | `Scheduler.sort_by_time`, `Scheduler._sort_tasks` | `sort_by_time` orders tasks by `fixed_time`, earliest first, with flexible tasks last. Ties break by priority, then title. `_sort_tasks` is what `generate_plan` uses, ordering by priority and then shorter duration. |
+| Filtering | `Scheduler.filter_tasks` | Keeps tasks by completion status (`completed=True/False`), pet name (case-insensitive), or both. It returns a new list, so it chains with `sort_by_time`. |
+| Conflict detection | `Scheduler.find_conflicts`, `Scheduler.conflict_warnings`, `Scheduler._overlaps` | `_overlaps` compares time ranges, so back-to-back tasks don't clash. `find_conflicts` returns every overlapping pair, within one pet or across pets. `conflict_warnings` turns them into warning strings (empty list if none) instead of raising. |
+| Recurring tasks | `Task.mark_complete`, `Pet.complete_task`, `Scheduler.complete_task` | Completing a daily or weekly task adds the next occurrence to the owning pet. The next due date is the previous due date + 1 or 7 days, not the completion date, and is never in the past. Completing a task twice does not create a duplicate. |
+
+**Conflicts in a plan.** `Scheduler.generate_plan` also resolves fixed-time overlaps by keeping the higher-priority task and skipping the other with a reason, rather than moving it to a free slot.
 
 ## 📸 Demo Walkthrough
 
