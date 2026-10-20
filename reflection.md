@@ -44,12 +44,16 @@
 **a. How you used AI**
 
 - How did you use AI tools during this project (for example: design brainstorming, debugging, refactoring)?
+  - I used Claude for design brainstorming, fleshing out the skeleton code for the classes, and the composing the full implementation for the classes.
 - What kinds of prompts or questions were most helpful?
+  - Mainly questions about how to go about designing this application were most helpful. Since I haven't really used or worked with this kind of application, the extra help was important.
 
 **b. Judgment and verification**
 
 - Describe one moment where you did not accept an AI suggestion as-is.
+  - One where I didn't accept an AI suggestion was when Task.mark_complete() was implemented, Claude computed the next due date as (due_date or today) + interval. I questioned this because it seemed to make recurrence relative to the completion date instead of a fixed schedule. Claude's code actually used due_date as the anchor when one was set. But the mix of two behaviors was a real flaw, so I had it switch to a consistent fixed schedule that never lands in the past, and document the rule in the docstring and README.
 - How did you evaluate or verify what the AI suggested?
+  - I evaluate the AI's suggestion by reading through the somewhat complex logic implementations line-by-line to ensure there were no gaps.
 
 ---
 

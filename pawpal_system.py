@@ -28,6 +28,7 @@ class Task:
     pet_name: str = ""  # set by Pet.add_task
 
     def __post_init__(self) -> None:
+        """Reject a non-positive duration or an unknown frequency."""
         if self.duration <= 0:
             raise ValueError("duration must be a positive number of minutes")
         if self.frequency not in _RECURRENCE_DAYS:
@@ -131,14 +132,17 @@ class Plan:
 
     @property
     def total_minutes(self) -> int:
+        """Total minutes of all scheduled items."""
         pass
 
     def explain(self) -> str:
+        """Plain-text explanation of what was scheduled, what was skipped, and why."""
         pass
 
 
 class Scheduler:
     def __init__(self, owner: Owner) -> None:
+        """Create a scheduler that plans using the given owner's pets and time."""
         self.owner = owner
 
     def get_due_tasks(self, day: date) -> list[Task]:
