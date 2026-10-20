@@ -75,19 +75,38 @@ Today's Schedule for John (Tuesday, October 20, 2026)
 
 ## 🧪 Testing PawPal+
 
+Run the full test suite from the project root:
+
 ```bash
-# Run the full test suite:
-pytest
-
-# Run with coverage:
-pytest --cov
+python -m pytest
 ```
 
-Sample test output:
+Sample output of a successful run:
 
 ```
-# Paste your pytest output here
+ai110-module2show-pawpal-starter % python -m pytest
+===================================================================== test session starts ======================================================================
+platform darwin -- Python 3.13.15, pytest-9.1.1, pluggy-1.7.0
+rootdir: /Users/pelumiol/CodingWorkspace/CodePath-Coding-Workspace/ai110-module2show-pawpal-starter
+plugins: anyio-4.15.1
+collected 26 items
+
+tests/test_pawpal.py ..........................                                                                                                          [100%]
+
+====================================================================== 26 passed in 0.02s ======================================================================
 ```
+
+**Confidence Level:** ⭐⭐⭐⭐⭐ (5 stars)
+
+Add `-v` to see each test by name. The suite lives in `tests/test_pawpal.py` (26 test cases) and covers:
+
+| Area | What is verified |
+|---|---|
+| Basics | Marking a task complete changes its status; adding a task grows the pet's task list. |
+| Sorting | `Scheduler.sort_by_time` returns tasks in chronological order, including midnight boundaries and unpadded hours (9:00 before 10:00); flexible tasks go last; ties break by priority; an empty list works; the input list is not mutated. |
+| Recurrence | Completing a daily task creates one for the following day, and a weekly task one 7 days later; the new task keeps the original's details; month, year and leap-year rollovers are correct; one-off tasks create nothing; completing twice doesn't duplicate; late completion is never rescheduled into the past; unknown tasks raise `ValueError`. |
+| Conflict detection | `Scheduler.conflict_warnings` flags duplicate times and partial overlaps, for the same pet and across different pets, with one warning per clashing pair; back-to-back, flexible and completed tasks are not flagged; empty and single-task schedules give no warnings. |
+| Filtering | `Scheduler.filter_tasks` filters by pet (case-insensitive) and completion status, and returns an empty list for an unknown pet. |
 
 ## 📐 Smarter Scheduling
 
