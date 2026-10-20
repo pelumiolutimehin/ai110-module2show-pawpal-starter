@@ -42,6 +42,20 @@ pip install -r requirements.txt
 6. Connect your logic to the Streamlit UI in `app.py`.
 7. Refine UML so it matches what you actually built.
 
+## ✨ Features
+
+- **Priority-based planning.** Tasks due on a day are ordered by priority (high first), then by shorter duration. Higher-priority tasks get time first.
+- **Fixed-time placement.** Tasks with a set time are placed first, and flexible tasks fill the free gaps from the owner's day start. Each flexible task goes in the earliest slot where it fits.
+- **Time-budget fitting.** Tasks are added until the owner's available minutes run out. A task that doesn't fit is skipped, and shorter ones after it are still tried.
+- **Sorting by time.** `sort_by_time` orders tasks chronologically, with flexible tasks last. Ties are broken by priority, then title, and the original list is left unchanged.
+- **Filtering.** `filter_tasks` keeps tasks by completion status, pet name (case-insensitive), or both. It returns a new list, so the result can be sorted.
+- **Conflict warnings.** `conflict_warnings` finds fixed-time tasks whose time ranges overlap, within one pet or across pets, and returns readable messages instead of raising. Back-to-back and completed tasks are not flagged.
+- **Conflict resolution.** When fixed-time tasks overlap, `generate_plan` keeps the higher-priority one. The other is listed as skipped with the reason.
+- **Daily and weekly recurrence.** Completing a recurring task creates the next occurrence, due 1 or 7 days after the previous due date. The new task keeps the same title, duration, priority, category and fixed time.
+- **Fixed recurrence schedule.** The next due date follows the old due date, not the completion date, and is never in the past. A task completed late doesn't come back overdue.
+
+- **Skip reasons.** Every task left out of a plan is recorded with a reason, such as an overlap or not enough available time.
+
 ## 🛠️ Implementation Summary
 
 The core domain logic is in `pawpal_system.py` and can be exercised from the CLI via `main.py`. The Streamlit UI (`app.py`) is not yet connected.
@@ -54,7 +68,7 @@ The core domain logic is in `pawpal_system.py` and can be exercised from the CLI
 2. Remaining flexible tasks are fitted greedily against the minutes left after the fixed tasks (`available_minutes` minus fixed durations). A task that doesn't fit is skipped, and shorter tasks after it are still considered.
 3. Each flexible task is placed in the earliest free gap at or after `Owner.day_start`.
 
-Unscheduled tasks are recorded as `SkippedTask`s with a reason string. `Plan.explain()` and `Plan.total_minutes` are not implemented yet, so `main.py` formats the output directly from `plan.items`.
+Unscheduled tasks are recorded as `SkippedTask`s with a reason string. `main.py` and the Streamlit app format their output directly from `plan.items` and `plan.skipped`.
 
 **Design decisions.**
 - Recurrence follows a fixed schedule: the next due date is the previous due date plus the interval (or today if none), clamped to never fall in the past. It is not relative to the completion date.
@@ -123,12 +137,97 @@ All methods are in `pawpal_system.py`, and `main.py` demonstrates each one.
 
 ## 📸 Demo Walkthrough
 
-Describe your app in numbered steps so a reader can follow along without watching a video:
+### UI features
 
-1. <!-- Describe this step -->
-2. <!-- Describe this step -->
-3. <!-- Describe this step -->
-4. <!-- Describe this step -->
-5. <!-- Add more steps as needed -->
+Run the app with `streamlit run app.py`. In the browser a user can:
 
-**Screenshot or video** *(optional)*: <!-- Insert a screenshot or link to a demo video here -->
+- **Set up the owner.** Enter a name and the minutes available today.
+- **Add pets.** Enter a name and choose dog, cat or other. Duplicate pet names are rejected with an error message.
+- **Add tasks.** Pick a pet, then set the title, duration, priority and frequency (once, daily or weekly). Optionally tick **Fixed time** to give the task a start time.
+- **Review tasks.** The task table can be sorted by time and filtered by pet and by status (all, pending or completed).
+- **Complete tasks.** Marking a daily or weekly task complete shows the date of its next occurrence.
+- **Generate a schedule.** The schedule table shows each task's time and the reason it was placed there. It also shows tasks scheduled, minutes used and tasks skipped, with a warning and reason for each skipped task.
+
+### Example workflow
+
+1. Add a pet, for example "Mochi" (dog).
+2. Add a task: "Morning walk", 30 minutes, high priority, daily, fixed time 07:30.
+3. Add a second task: "Vet call", 30 minutes, medium priority, fixed time 07:45.
+4. A warning appears above the task list because the two tasks overlap, naming both and the time windows.
+5. Click **Generate schedule**. "Morning walk" is scheduled, and "Vet call" is listed as skipped because it overlaps the higher-priority task.
+6. Under **Mark a task complete**, complete "Morning walk". The app confirms that the next occurrence is scheduled for tomorrow.
+
+### Scheduler behaviors shown
+
+- **Sorting.** The task table orders tasks by fixed time (`Scheduler.sort_by_time`), with flexible tasks last.
+- **Filtering.** The pet and status filters use `Scheduler.filter_tasks`, alone or combined.
+- **Conflict warnings.** Overlapping fixed-time tasks are reported without crashing, for the same pet or across pets (`Scheduler.conflict_warnings`).
+- **Conflict resolution.** The higher-priority task keeps its slot and the other is skipped with a reason (`Scheduler.generate_plan`).
+- **Recurrence.** Completing a daily or weekly task creates the next occurrence (`Scheduler.complete_task`).
+
+### Sample CLI output
+
+Output from `python main.py`, which builds the tasks out of time order, prints the schedule, then shows the sorted and filtered views and a conflict check:
+
+```
+Today's Schedule for John (Tuesday, October 20, 2026)
+==================================================
+07:30 - 08:00  Morning walk (Bingo, high priority)
+08:00 - 08:20  Brush coat (Bingo, low priority)
+09:00 - 09:15  Play with feather toy (Valentine, low priority)
+12:15 - 12:30  Litter box cleaning (Valentine, medium priority)
+18:00 - 18:10  Evening feeding (Bingo, high priority)
+
+Added order (unsorted)
+--------------------------------------------------
+   18:00  Evening feeding (Bingo, pending)
+flexible  Brush coat (Bingo, pending)
+   07:30  Morning walk (Bingo, pending)
+   12:15  Litter box cleaning (Valentine, done)
+   09:00  Play with feather toy (Valentine, pending)
+   12:15  Litter box cleaning (Valentine, pending)
+
+Sorted by time
+--------------------------------------------------
+   07:30  Morning walk (Bingo, pending)
+   09:00  Play with feather toy (Valentine, pending)
+   12:15  Litter box cleaning (Valentine, done)
+   12:15  Litter box cleaning (Valentine, pending)
+   18:00  Evening feeding (Bingo, pending)
+flexible  Brush coat (Bingo, pending)
+
+Pending only
+--------------------------------------------------
+   18:00  Evening feeding (Bingo, pending)
+flexible  Brush coat (Bingo, pending)
+   07:30  Morning walk (Bingo, pending)
+   09:00  Play with feather toy (Valentine, pending)
+   12:15  Litter box cleaning (Valentine, pending)
+
+Completed only
+--------------------------------------------------
+   12:15  Litter box cleaning (Valentine, done)
+
+Bingo's tasks
+--------------------------------------------------
+   18:00  Evening feeding (Bingo, pending)
+flexible  Brush coat (Bingo, pending)
+   07:30  Morning walk (Bingo, pending)
+
+Valentine's pending tasks, by time
+--------------------------------------------------
+   09:00  Play with feather toy (Valentine, pending)
+   12:15  Litter box cleaning (Valentine, pending)
+
+Conflict check
+--------------------------------------------------
+Warning: 'Morning walk' 07:30-08:00 overlaps 'Vet check-in' 07:30-08:00 - same pet (Bingo)
+Warning: 'Evening feeding' 18:00-18:10 overlaps 'Grooming' 18:00-18:30 - different pets (Bingo and Valentine)
+Today's Schedule for John (Tuesday, October 20, 2026)
+==================================================
+07:30 - 08:00  Morning walk (Bingo, high priority)
+08:00 - 08:20  Brush coat (Bingo, low priority)
+09:00 - 09:15  Play with feather toy (Valentine, low priority)
+12:15 - 12:30  Litter box cleaning (Valentine, medium priority)
+18:00 - 18:10  Evening feeding (Bingo, high priority)
+```

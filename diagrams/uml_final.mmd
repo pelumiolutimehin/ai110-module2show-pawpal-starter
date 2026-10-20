@@ -1,0 +1,94 @@
+classDiagram
+    %% v3 - synced with the final pawpal_system.py.
+
+    class Priority {
+        <<enumeration>>
+        LOW = 1
+        MEDIUM = 2
+        HIGH = 3
+    }
+
+    class Owner {
+        +str name
+        +int available_minutes
+        +time day_start
+        +dict preferences
+        +list~Pet~ pets
+        +add_pet(pet) None
+        +remove_pet(pet) None
+        +get_all_tasks() list~Task~
+    }
+
+    class Pet {
+        +str name
+        +str species
+        +str breed
+        +list~Task~ tasks_list
+        +add_task(task) None
+        +remove_task(task) None
+        +complete_task(task) Task
+        +pending_tasks() list~Task~
+    }
+
+    class Task {
+        +str title
+        +int duration
+        +Priority priority
+        +str category
+        +str frequency
+        +time fixed_time
+        +date due_date
+        +bool completed
+        +str pet_name
+        +mark_complete() Task
+        +is_due(day) bool
+    }
+
+    class Scheduler {
+        +Owner owner
+        +get_due_tasks(day) list~Task~
+        +generate_plan(day) Plan
+        +complete_task(task) Task
+        +sort_by_time(tasks) list~Task~
+        +filter_tasks(completed, pet_name, tasks) list~Task~
+        +find_conflicts(tasks) list~tuple~
+        +conflict_warnings(day) list~str~
+        -_sort_tasks(tasks) list~Task~
+        -_fit_to_time(tasks, minutes) tuple
+        -_overlaps(a, b)$ bool
+        -_earliest_gap(items, start, minutes)$ datetime
+        -_window(task)$ str
+    }
+
+    class Plan {
+        +list~ScheduledItem~ items
+        +list~SkippedTask~ skipped
+    }
+
+    class ScheduledItem {
+        +Task task
+        +datetime start_time
+        +datetime end_time
+        +str reason
+    }
+
+    class SkippedTask {
+        +Task task
+        +str reason
+    }
+
+    Owner "1" o-- "*" Pet : has
+    Pet "1" o-- "*" Task : has
+    Task --> Priority
+    Scheduler --> Owner : reads available_minutes, day_start and get_all_tasks()
+    Scheduler ..> Pet : delegates complete_task to
+    Scheduler ..> Plan : creates
+    Scheduler ..> ScheduledItem : creates
+    Scheduler ..> SkippedTask : creates
+    Scheduler ..> Task : sorts, filters, checks conflicts
+    Pet ..> Task : stamps pet_name, calls mark_complete()
+    Task ..> Task : mark_complete() creates next occurrence
+    Plan "1" *-- "*" ScheduledItem : contains
+    Plan "1" *-- "*" SkippedTask : contains
+    ScheduledItem --> Task
+    SkippedTask --> Task
