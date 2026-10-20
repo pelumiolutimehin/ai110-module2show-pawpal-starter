@@ -133,15 +133,6 @@ class Plan:
     items: list[ScheduledItem] = field(default_factory=list)
     skipped: list[SkippedTask] = field(default_factory=list)
 
-    @property
-    def total_minutes(self) -> int:
-        """Total minutes of all scheduled items."""
-        pass
-
-    def explain(self) -> str:
-        """Plain-text explanation of what was scheduled, what was skipped, and why."""
-        pass
-
 
 class Scheduler:
     def __init__(self, owner: Owner) -> None:
